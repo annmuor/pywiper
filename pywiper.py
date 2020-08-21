@@ -1,43 +1,47 @@
-from sys import argv
+#!/usr/bin/env python3
+
+import argparse
+import pprint
 from time import time
+
+import pip
+
 try:
     from pyrogram import Client
 except ImportError:
-    print("Please run: pip install --user pyrogram tgcrypto")
-    exit(1)
-print("**** TELEGRAM GROUPS WIPER ****")
-print("* Idea: @annmuor")
-print("* First python release: @stenopolz")
-print("** Stay Safe! **")
+    if hasattr(pip, 'main'):
+        pip.main(['install', 'pyrogram'])
+        pip.main(['install', 'tgcrypto'])
+    else:
+        pip._internal.main(['install', 'pyrogram'])
+        pip._internal.main(['install', 'tgcrypto'])
 
-if len(argv) < 3:
-    print("Usage: {} <id:hash> <list|wipe id [days]>".format(argv[0]))
-    exit(1)
 
-if argv[2] == "wipe" and len(argv) < 4:
-    print("Usage: {} <id:hash> <list|wipe id [days]>".format(argv[0]))
-    exit(1)
+def wipe(client, _id, days):
+    till = int(time()) - (3600 * 24 * days)
+    for message in client.iter_history(_id):
+        if message.date < till:
+            break
+        message.delete()
 
-x = argv[1].split(":")
-api_id = x[0]
-api_hash = x[1]
 
-with Client("my_account", api_id, api_hash) as app:
-    if argv[2] == "list":
-        print("ID".ljust(20),"DIALOG")
-        for dialog in app.iter_dialogs():
-            if dialog.chat.type == "group" or dialog.chat.type == "supergroup":
-                print("{}".format(dialog.chat.id).ljust(20),dialog.chat.title)
-        exit(0)
-    if argv[2] == "wipe":
-        id = int(argv[3])
-        days = 1
-        if len(argv) > 4:
-            days = int(argv[4])
+def list(client):
+    outcome = [('ID', 'DIALOG')]
+    for dialog in client.iter_dialogs():
+        if dialog.chat.type == "group" or dialog.chat.type == "supergroup":
+            outcome.append((dialog.chat.id, dialog.chat.title))
+    return outcome
 
-    till = int(time()) - (3600*24*days)
-    for message in app.iter_history(id):
-        if message.date > till:
-            message.delete()
-        else:
-            exit(0)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("id", help='id', type=int)
+    parser.add_argument("hash", help='hash')
+    parser.add_argument("-l", "--list", help="list", action="store_true")
+    parser.add_argument("-w", "--wipe", help="wipe <id> <days>", nargs='+', )
+    args = parser.parse_args()
+    with Client("my_account", args.id, args.hash) as client:
+        if args.list:
+            pprint.pprint(list(client))
+        if args.wipe:
+            wipe(client, args.wipe[0], args.wipe[1])
