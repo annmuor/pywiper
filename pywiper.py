@@ -25,6 +25,11 @@ def _wipe(client, _id, days=1, *args):
             break
         message.delete()
 
+def _erase(client, _id, *args):
+    for message in client.iter_history(_id):
+        if message.outgoing:
+            print("Delete: >", message.text)
+            message.delete()
 
 def _list(client):
     outcome = [['ID', 'DIALOG']]
@@ -40,9 +45,14 @@ if __name__ == '__main__':
     parser.add_argument("-s", "--secret", help="my.telegram.org/apps API Secret", required=True)
     parser.add_argument("-l", "--list", help="list chats", action="store_true")
     parser.add_argument("-w", "--wipe", help="wipe <id> <days>", nargs='+', )
+    parser.add_argument("-e", "--erase", help="erase <id>", nargs='+', )
     args = parser.parse_args()
     with Client("my_account", args.id, args.secret) as client:
         if args.list:
-            [print("{0:20} {1}".format(*x)) for x in _list(client)]
+            for chat in _list(client):
+                print("{0:20} {1}".format(*chat))
         if args.wipe:
             _wipe(client, *args.wipe)
+        if args.erase:
+            _erase(client, *args.erase)
+
