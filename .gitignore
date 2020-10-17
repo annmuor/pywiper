@@ -1,1 +1,4 @@
 **/*.session
+*.pyc
+__pycache__
+.*
