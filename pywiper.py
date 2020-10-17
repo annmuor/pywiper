@@ -17,12 +17,15 @@ except ImportError:
         pip._internal.main(['install', 'tgcrypto'])
 
 
-def _wipe(client, _id, days=1, *args):
-    days=int(days)
-    till = int(time()) - (3600 * 24 * days)
+def _wipe(client, _id, till_days=1, since_days=0, *args):
+    till_ts = int(time() - (3600 * 24 * int(till_days)))
+    since_ts = int(time() - (3600 * 24 * int(since_days)))
+
     for message in client.iter_history(_id):
-        if message.date < till:
+        if message.date < till_ts:
             break
+        if message.date > since_ts:
+            continue
         message.delete()
 
 def _erase(client, _id, *args):
@@ -44,9 +47,10 @@ if __name__ == '__main__':
     parser.add_argument("-i", "--id", type=int, help="my.telegram.org/apps API ID", required=True)
     parser.add_argument("-s", "--secret", help="my.telegram.org/apps API Secret", required=True)
     parser.add_argument("-l", "--list", help="list chats", action="store_true")
-    parser.add_argument("-w", "--wipe", help="wipe <id> <days>", nargs='+', )
+    parser.add_argument("-w", "--wipe", help="wipe <id> [until days [since days]]", nargs='+', )
     parser.add_argument("-e", "--erase", help="erase <id>", nargs='+', )
     args = parser.parse_args()
+
     with Client("my_account", args.id, args.secret) as client:
         if args.list:
             for chat in _list(client):
