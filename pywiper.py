@@ -17,22 +17,38 @@ except ImportError:
         pip._internal.main(['install', 'tgcrypto'])
 
 
+
 def _wipe(client, _id, till_days=1, since_days=0, *args):
     till_ts = int(time() - (3600 * 24 * int(till_days)))
     since_ts = int(time() - (3600 * 24 * int(since_days)))
 
-    for message in client.iter_history(_id):
-        if message.date < till_ts:
-            break
-        if message.date > since_ts:
-            continue
-        message.delete()
+    offset = 0
+    limit = 100
+    out = False
+    while not out:
+        for message in client.get_history(_id, offset=offset,limit=limit):
+            if message.date < till_ts:
+                out = True
+                break
+            if message.date > since_ts:
+                continue
+            message.delete()
+        offset = limit + offset
 
 def _erase(client, _id, *args):
-    for message in client.iter_history(_id):
-        if message.outgoing:
-            print("Delete: >", message.text)
-            message.delete()
+    offset = 0
+    limit = 100
+    out = False
+    while not out:
+        idx = 0
+        for message in client.get_history(_id, offset=offset,limit=limit):
+            idx = idx + 1
+            if message.outgoing:
+                print("Delete: >", message.text)
+                message.delete()
+        offset = limit + offset
+        if idx == 0:
+            out = True
 
 def _list(client):
     outcome = [['ID', 'DIALOG']]
