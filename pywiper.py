@@ -25,6 +25,7 @@ def _wipe(client, _id, till_days=1, since_days=0, *args):
     offset = 0
     limit = 100
     out = False
+    dlist = []
     while not out:
         for message in client.get_history(_id, offset=offset,limit=limit):
             if message.date < till_ts:
@@ -32,23 +33,28 @@ def _wipe(client, _id, till_days=1, since_days=0, *args):
                 break
             if message.date > since_ts:
                 continue
-            message.delete()
+            dlist.append(message)
         offset = limit + offset
+    for i in dlist:
+      i.delete()
 
 def _erase(client, _id, *args):
     offset = 0
     limit = 100
     out = False
+    dlist = []
     while not out:
         idx = 0
         for message in client.get_history(_id, offset=offset,limit=limit):
             idx = idx + 1
             if message.outgoing:
                 print("Delete: >", message.text)
-                message.delete()
+                dlist.append(message)
         offset = limit + offset
         if idx == 0:
             out = True
+    for i in dlist:
+      i.delete()
 
 def _list(client):
     outcome = [['ID', 'DIALOG']]
